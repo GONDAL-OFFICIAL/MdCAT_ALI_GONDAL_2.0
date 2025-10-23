@@ -1,14 +1,13 @@
 {
-  "name": "modern-quiz-platform",
+  "name": "MdCAT_ALI_GONDAL_2.0",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.15",

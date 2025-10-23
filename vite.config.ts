@@ -2,10 +2,11 @@ import path from "path";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 
+// ✅ Vite config for GitHub Pages deployment
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, ".", "");
   return {
-    base: "/MDCAT---Ali-Gondal/", // <-- add this line for GitHub Pages
+    base: "/MdCAT_ALI_GONDAL_2.0/", // ✅ Correct repo name for GitHub Pages
     server: {
       port: 3000,
       host: "0.0.0.0",
@@ -17,9 +18,12 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        // Fix: Replace __dirname with process.cwd() for ES module compatibility in Vite.
         "@": path.resolve(process.cwd(), "."),
       },
+    },
+    build: {
+      outDir: "dist",
+      emptyOutDir: true,
     },
   };
 });
