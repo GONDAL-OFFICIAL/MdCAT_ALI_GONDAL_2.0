@@ -3,7 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
 import { Question } from '../types';
 import { ArrowLeft, Play, ListTodo, Hash, Clock } from 'lucide-react';
-import { TIME_PER_QUESTION } from '../data/index';
+
+type TimeMode = 'slow' | 'intermediate' | 'fast' | 'custom';
+
+const timerOptions: { id: TimeMode; label: string; icon: string; time: number | null }[] = [
+    { id: 'slow', label: 'Slow', icon: '🐌', time: 60 },
+    { id: 'intermediate', label: 'Intermediate', icon: '🐘', time: 30 },
+    { id: 'fast', label: 'Fast', icon: '🐆', time: 15 },
+    { id: 'custom', label: 'Custom', icon: '⚙️', time: null },
+];
 
 const CustomTestSetupPage: React.FC = () => {
   const { subjects, chapters, mcqs, startQuiz } = useContext(QuizContext);
@@ -11,6 +19,8 @@ const CustomTestSetupPage: React.FC = () => {
   
   const [selectedChapters, setSelectedChapters] = useState<{[key: string]: string[]}>({});
   const [numQuestions, setNumQuestions] = useState(0);
+  const [timeMode, setTimeMode] = useState<TimeMode>('slow');
+  const [customTime, setCustomTime] = useState(60);
 
   const handleChapterToggle = (subject: string, chapter: string) => {
     setSelectedChapters(prev => {
@@ -27,22 +37,29 @@ const CustomTestSetupPage: React.FC = () => {
   );
     
   const totalAvailableQuestions = allQuestions.length;
-  // Removed hardcoded limit of 100
   const maxQuestionsAllowed = totalAvailableQuestions;
 
   useEffect(() => {
-    // Dynamically adjust the number of questions based on user's chapter selection
     if (totalAvailableQuestions > 0) {
       setNumQuestions(currentNum => {
-        const newNum = currentNum === 0 ? Math.min(20, totalAvailableQuestions) : currentNum; // Set a sensible default
-        return Math.min(newNum, totalAvailableQuestions); // Cap at max available
+        const newNum = currentNum === 0 ? Math.min(20, totalAvailableQuestions) : currentNum;
+        return Math.min(newNum, totalAvailableQuestions);
       });
     } else {
-      setNumQuestions(0); // Reset to 0 if no chapters are selected
+      setNumQuestions(0);
     }
   }, [totalAvailableQuestions]);
 
-  const estimatedTime = Math.ceil((numQuestions * TIME_PER_QUESTION) / 60);
+  const timePerQuestion = (() => {
+    switch (timeMode) {
+        case 'slow': return 60;
+        case 'intermediate': return 30;
+        case 'fast': return 15;
+        case 'custom': return customTime > 0 ? customTime : 1;
+    }
+  })();
+
+  const estimatedTime = Math.ceil((numQuestions * timePerQuestion) / 60);
 
   const handleStartCustomTest = () => {
     if (allQuestions.length === 0 || numQuestions === 0) {
@@ -51,7 +68,7 @@ const CustomTestSetupPage: React.FC = () => {
     }
     const shuffled = [...allQuestions].sort(() => 0.5 - Math.random());
     const selected = shuffled.slice(0, numQuestions);
-    startQuiz(selected);
+    startQuiz(selected, timePerQuestion);
     navigate('/quiz');
   };
 
@@ -99,7 +116,7 @@ const CustomTestSetupPage: React.FC = () => {
       </div>
 
       <div className="p-6 bg-gray-800 rounded-lg shadow-lg">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div className="space-y-6">
             <div>
                 <h3 className="text-xl font-semibold mb-4 text-teal-300 flex items-center">
                     <Hash className="w-6 h-6 mr-2" /> Number of Questions
@@ -107,7 +124,6 @@ const CustomTestSetupPage: React.FC = () => {
                 <div className="flex items-center space-x-4">
                     <input 
                         type="range" 
-                        // Fixed bug where min was 10, making it unusable for small question sets
                         min={totalAvailableQuestions > 0 ? 1 : 0}
                         max={maxQuestionsAllowed} 
                         value={numQuestions}
@@ -129,24 +145,57 @@ const CustomTestSetupPage: React.FC = () => {
                 Total available from selection: <span className="font-bold text-white">{totalAvailableQuestions}</span>
                 </p>
             </div>
-            <div className="bg-gray-700 p-4 rounded-lg text-center">
-                <h3 className="text-xl font-semibold mb-2 text-teal-300 flex items-center justify-center">
-                    <Clock className="w-6 h-6 mr-2" /> Estimated Time
+            
+            <hr className="border-gray-700" />
+
+            <div>
+                <h3 className="text-xl font-semibold mb-4 text-teal-300 flex items-center">
+                    <Clock className="w-6 h-6 mr-2" /> Timer Mode
                 </h3>
-                <p className="text-3xl font-bold text-white">~{estimatedTime} <span className="text-lg font-normal">minutes</span></p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {timerOptions.map(option => (
+                        <button
+                            key={option.id}
+                            onClick={() => setTimeMode(option.id)}
+                            className={`p-4 rounded-lg transition-all border-2 ${timeMode === option.id ? 'bg-teal-600 border-teal-400' : 'bg-gray-600 border-gray-500 hover:border-teal-500'}`}
+                        >
+                            <div className="text-3xl">{option.icon}</div>
+                            <div className="font-semibold mt-1">{option.label}</div>
+                            <div className="text-xs text-gray-300">{option.time ? `${option.time}s / Q` : 'Custom'}</div>
+                        </button>
+                    ))}
+                </div>
+                {timeMode === 'custom' && (
+                    <div className="mt-4 flex items-center justify-center space-x-2">
+                        <input
+                            type="number"
+                            value={customTime}
+                            onChange={e => setCustomTime(parseInt(e.target.value) || 1)}
+                            className="w-24 px-2 py-1 text-center text-white bg-gray-900 border border-gray-600 rounded-md"
+                            min="1"
+                        />
+                        <span className="text-gray-300">seconds per question</span>
+                    </div>
+                )}
             </div>
         </div>
       </div>
 
-       <div className="text-center">
-        <button
-          onClick={handleStartCustomTest}
-          disabled={totalAvailableQuestions === 0 || numQuestions === 0}
-          className="inline-flex items-center px-8 py-3 text-base font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
-        >
-          <Play className="w-5 h-5 mr-2" />
-          Start Custom Test
-        </button>
+       <div className="text-center bg-gray-800 p-4 rounded-lg">
+          <div className="mb-4">
+            <h3 className="text-xl font-semibold text-teal-300">Test Summary</h3>
+            <p className="text-gray-300">
+              <span className="font-bold text-white">{numQuestions}</span> questions with an estimated time of <span className="font-bold text-white">~{estimatedTime} minutes</span>.
+            </p>
+          </div>
+          <button
+            onClick={handleStartCustomTest}
+            disabled={totalAvailableQuestions === 0 || numQuestions === 0}
+            className="inline-flex items-center px-8 py-3 text-base font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+          >
+            <Play className="w-5 h-5 mr-2" />
+            Start Custom Test
+          </button>
       </div>
     </div>
   );

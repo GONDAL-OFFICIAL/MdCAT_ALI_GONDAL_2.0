@@ -1,7 +1,6 @@
-
 import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import { QuizState, QuizContextType, Question, QuizAttempt } from '../types';
-import { users, subjects, chapters, TIME_PER_QUESTION } from '../data/index';
+import { users, subjects, chapters } from '../data/index';
 import { mcqs } from '../data/mcqs';
 
 export const QuizContext = createContext<QuizContextType>({} as QuizContextType);
@@ -19,6 +18,7 @@ const defaultInitialState: QuizState = {
   startTime: null,
   endTime: null,
   quizDuration: null,
+  timePerQuestion: null,
   bookmarkedQuestions: [],
 };
 
@@ -28,12 +28,29 @@ const getInitialState = (): QuizState => {
     const savedStateJSON = sessionStorage.getItem('quizDynamicState');
     if (savedStateJSON) {
       const savedDynamicState = JSON.parse(savedStateJSON);
-      // Combine static data with dynamic saved state
+      
+      // If a quiz was in progress (questions exist but it's not finished), restart it on reload.
+      const quizWasInProgress = savedDynamicState.quizQuestions && savedDynamicState.quizQuestions.length > 0 && !savedDynamicState.endTime;
+
+      if (quizWasInProgress) {
+        // Reset progress but keep the same set of questions
+        const restartedQuizState = {
+          ...savedDynamicState,
+          quizAttempts: [], // Reset attempts
+          startTime: Date.now(), // Reset start time to now
+          endTime: null, // Ensure end time is null
+        };
+        // Re-combine with static data and return the modified state
+        return { ...defaultInitialState, ...restartedQuizState };
+      }
+      
+      // If no quiz was in progress, load the saved state as is
       return { ...defaultInitialState, ...savedDynamicState };
     }
   } catch (error) {
     console.error("Could not parse saved state:", error);
   }
+  // Return the absolute default if nothing is saved or an error occurs
   return defaultInitialState;
 };
 
@@ -70,19 +87,22 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setState(prevState => ({ ...prevState, currentChapter: chapter }));
   }, []);
 
-  const startQuiz = useCallback((questions: Question[]) => {
+  const startQuiz = useCallback((questions: Question[], timePerQuestion: number) => {
     setState(prevState => ({
       ...prevState,
       quizQuestions: questions,
       quizAttempts: [],
       startTime: Date.now(),
       endTime: null,
-      quizDuration: questions.length * TIME_PER_QUESTION,
+      quizDuration: questions.length * timePerQuestion,
+      timePerQuestion: timePerQuestion,
+      bookmarkedQuestions: [], // Clear bookmarks for a new test
     }));
   }, []);
   
-  const submitAnswer = useCallback((question: Question, userAnswer: string) => {
-    const isCorrect = question.correctAnswer === userAnswer;
+  const submitAnswer = useCallback((question: Question, userAnswer: string, forceIncorrect = false) => {
+    // If forceIncorrect is true, the answer is wrong regardless. Otherwise, check normally.
+    const isCorrect = forceIncorrect ? false : question.correctAnswer === userAnswer;
     const attempt: QuizAttempt = { question, userAnswer, isCorrect };
     setState(prevState => ({
       ...prevState,
@@ -107,6 +127,7 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       startTime: null,
       endTime: null,
       quizDuration: null,
+      timePerQuestion: null,
     }));
   }, []);
   
@@ -130,7 +151,7 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             quizAttempts: [],
             startTime: Date.now(),
             endTime: null,
-            quizDuration: questionsToRetake.length * TIME_PER_QUESTION,
+            quizDuration: questionsToRetake.length * (prevState.timePerQuestion || 60),
         };
       }
       return prevState;
@@ -143,7 +164,7 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       quizAttempts: [],
       startTime: Date.now(),
       endTime: null,
-      quizDuration: prevState.quizQuestions.length * TIME_PER_QUESTION,
+      quizDuration: prevState.quizQuestions.length * (prevState.timePerQuestion || 60),
     }));
   }, []);
 
@@ -178,7 +199,7 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           quizAttempts: [],
           startTime: Date.now(),
           endTime: null,
-          quizDuration: shuffled.length * TIME_PER_QUESTION,
+          quizDuration: shuffled.length * (prevState.timePerQuestion || 60),
         };
       }
       return prevState;
@@ -204,7 +225,7 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   quizAttempts: [],
                   startTime: Date.now(),
                   endTime: null,
-                  quizDuration: shuffled.length * TIME_PER_QUESTION,
+                  quizDuration: shuffled.length * (prevState.timePerQuestion || 60),
               };
           }
           return prevState;

@@ -1,4 +1,5 @@
 
+
 export interface User {
   username: string;
   password?: string;
@@ -38,6 +39,7 @@ export interface QuizState {
   startTime: number | null;
   endTime: number | null;
   quizDuration: number | null;
+  timePerQuestion: number | null;
   bookmarkedQuestions: Question[];
 }
 
@@ -46,8 +48,8 @@ export interface QuizContextType extends QuizState {
   logout: () => void;
   selectSubject: (subject: string) => void;
   selectChapter: (chapter: string) => void;
-  startQuiz: (questions: Question[]) => void;
-  submitAnswer: (question: Question, userAnswer: string) => void;
+  startQuiz: (questions: Question[], timePerQuestion: number) => void;
+  submitAnswer: (question: Question, userAnswer: string, forceIncorrect?: boolean) => void;
   finishQuiz: () => void;
   resetQuiz: () => void;
   startNewTest: () => void;

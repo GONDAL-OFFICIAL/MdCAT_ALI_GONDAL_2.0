@@ -1,8 +1,16 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
-import { Play, ArrowLeft, Hash } from 'lucide-react';
-import { TIME_PER_QUESTION } from '../data/index';
+import { Play, ArrowLeft, Hash, Clock } from 'lucide-react';
+
+type TimeMode = 'slow' | 'intermediate' | 'fast' | 'custom';
+
+const timerOptions: { id: TimeMode; label: string; icon: string; time: number | null }[] = [
+    { id: 'slow', label: 'Slow', icon: '🐌', time: 60 },
+    { id: 'intermediate', label: 'Intermediate', icon: '🐘', time: 30 },
+    { id: 'fast', label: 'Fast', icon: '🐆', time: 15 },
+    { id: 'custom', label: 'Custom', icon: '⚙️', time: null },
+];
 
 const QuizSetupPage: React.FC = () => {
   const { subject, chapter } = useParams<{ subject: string, chapter: string }>();
@@ -13,9 +21,10 @@ const QuizSetupPage: React.FC = () => {
   const totalAvailableQuestions = questions.length;
   
   const [numQuestions, setNumQuestions] = useState(totalAvailableQuestions);
+  const [timeMode, setTimeMode] = useState<TimeMode>('slow');
+  const [customTime, setCustomTime] = useState(60);
 
   useEffect(() => {
-    // Set the initial number of questions to all available when the component loads or chapter changes.
     setNumQuestions(totalAvailableQuestions);
   }, [totalAvailableQuestions]);
   
@@ -23,12 +32,21 @@ const QuizSetupPage: React.FC = () => {
     return <p>Error: Subject or chapter not specified.</p>;
   }
 
-  const estimatedTime = numQuestions; // 1 min per question
+  const timePerQuestion = (() => {
+    switch (timeMode) {
+        case 'slow': return 60;
+        case 'intermediate': return 30;
+        case 'fast': return 15;
+        case 'custom': return customTime > 0 ? customTime : 1;
+    }
+  })();
+
+  const estimatedTime = Math.ceil((numQuestions * timePerQuestion) / 60);
 
   const handleStartQuiz = () => {
     const shuffled = [...questions].sort(() => 0.5 - Math.random());
     const selectedQuestions = shuffled.slice(0, numQuestions);
-    startQuiz(selectedQuestions);
+    startQuiz(selectedQuestions, timePerQuestion);
     navigate('/quiz');
   };
   
@@ -75,7 +93,39 @@ const QuizSetupPage: React.FC = () => {
                   </p>
                 </div>
 
-                <p className="text-lg text-gray-300">
+                {/* Timer Mode Selector */}
+                <div className="pt-4">
+                    <h3 className="text-lg font-semibold mb-4 text-teal-300 flex items-center justify-center">
+                        <Clock className="w-5 h-5 mr-2" /> Timer Mode
+                    </h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {timerOptions.map(option => (
+                            <button
+                                key={option.id}
+                                onClick={() => setTimeMode(option.id)}
+                                className={`p-4 rounded-lg transition-all border-2 ${timeMode === option.id ? 'bg-teal-600 border-teal-400' : 'bg-gray-600 border-gray-500 hover:border-teal-500'}`}
+                            >
+                                <div className="text-3xl">{option.icon}</div>
+                                <div className="font-semibold mt-1">{option.label}</div>
+                                <div className="text-xs text-gray-300">{option.time ? `${option.time}s / Q` : 'Custom'}</div>
+                            </button>
+                        ))}
+                    </div>
+                    {timeMode === 'custom' && (
+                        <div className="mt-4 flex items-center justify-center space-x-2">
+                            <input
+                                type="number"
+                                value={customTime}
+                                onChange={e => setCustomTime(parseInt(e.target.value) || 1)}
+                                className="w-24 px-2 py-1 text-center text-white bg-gray-900 border border-gray-600 rounded-md"
+                                min="1"
+                            />
+                            <span className="text-gray-300">seconds per question</span>
+                        </div>
+                    )}
+                </div>
+
+                <p className="text-lg text-gray-300 pt-4">
                     Estimated Time: <span className="font-bold text-white">~{estimatedTime} minutes</span>
                 </p>
             </div>
