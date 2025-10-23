@@ -43,6 +43,7 @@ export interface QuizState {
 
 export interface QuizContextType extends QuizState {
   login: (username: string, password: string) => void;
+  logout: () => void;
   selectSubject: (subject: string) => void;
   selectChapter: (chapter: string) => void;
   startQuiz: (questions: Question[]) => void;
@@ -50,9 +51,9 @@ export interface QuizContextType extends QuizState {
   finishQuiz: () => void;
   resetQuiz: () => void;
   startNewTest: () => void;
-  startRetake: () => boolean;
+  startRetake: () => void;
   retakeFullQuiz: () => void;
   toggleBookmark: (question: Question) => void;
-  startBookmarkedQuiz: () => boolean;
-  startWrongAndBookmarkedQuiz: () => boolean;
+  startBookmarkedQuiz: () => void;
+  startWrongAndBookmarkedQuiz: () => void;
 }

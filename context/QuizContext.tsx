@@ -1,13 +1,13 @@
 
-import React, { createContext, useState, ReactNode } from 'react';
-import { QuizState, QuizContextType, User, Question, QuizAttempt } from '../types';
-// Fix: Explicitly import from '../data/index' to avoid resolving to the empty 'data.ts' file.
+import React, { createContext, useState, ReactNode, useCallback, useEffect } from 'react';
+import { QuizState, QuizContextType, Question, QuizAttempt } from '../types';
 import { users, subjects, chapters, TIME_PER_QUESTION } from '../data/index';
 import { mcqs } from '../data/mcqs';
 
 export const QuizContext = createContext<QuizContextType>({} as QuizContextType);
 
-const initialState: QuizState = {
+// This is the true initial state for a fresh session
+const defaultInitialState: QuizState = {
   user: null,
   subjects,
   chapters,
@@ -22,10 +22,31 @@ const initialState: QuizState = {
   bookmarkedQuestions: [],
 };
 
-export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<QuizState>(initialState);
+// This function runs once to rehydrate state from sessionStorage
+const getInitialState = (): QuizState => {
+  try {
+    const savedStateJSON = sessionStorage.getItem('quizDynamicState');
+    if (savedStateJSON) {
+      const savedDynamicState = JSON.parse(savedStateJSON);
+      // Combine static data with dynamic saved state
+      return { ...defaultInitialState, ...savedDynamicState };
+    }
+  } catch (error) {
+    console.error("Could not parse saved state:", error);
+  }
+  return defaultInitialState;
+};
 
-  const login = (username: string, password: string) => {
+export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [state, setState] = useState<QuizState>(getInitialState);
+
+  // This effect persists the dynamic parts of the state to sessionStorage on every change
+  useEffect(() => {
+    const { subjects, chapters, mcqs, ...dynamicState } = state;
+    sessionStorage.setItem('quizDynamicState', JSON.stringify(dynamicState));
+  }, [state]);
+
+  const login = useCallback((username: string, password: string) => {
     const userExists = users.find(
       u => u.username.toLowerCase() === username.toLowerCase() && u.password === password
     );
@@ -34,17 +55,22 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } else {
       alert("Invalid username or password!");
     }
-  };
+  }, []);
+  
+  const logout = useCallback(() => {
+    sessionStorage.removeItem('quizDynamicState');
+    setState(defaultInitialState);
+  }, []);
 
-  const selectSubject = (subject: string) => {
+  const selectSubject = useCallback((subject: string) => {
     setState(prevState => ({ ...prevState, currentSubject: subject }));
-  };
+  }, []);
 
-  const selectChapter = (chapter: string) => {
+  const selectChapter = useCallback((chapter: string) => {
     setState(prevState => ({ ...prevState, currentChapter: chapter }));
-  };
+  }, []);
 
-  const startQuiz = (questions: Question[]) => {
+  const startQuiz = useCallback((questions: Question[]) => {
     setState(prevState => ({
       ...prevState,
       quizQuestions: questions,
@@ -53,24 +79,25 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       endTime: null,
       quizDuration: questions.length * TIME_PER_QUESTION,
     }));
-  };
+  }, []);
   
-  const submitAnswer = (question: Question, userAnswer: string) => {
+  const submitAnswer = useCallback((question: Question, userAnswer: string) => {
     const isCorrect = question.correctAnswer === userAnswer;
     const attempt: QuizAttempt = { question, userAnswer, isCorrect };
     setState(prevState => ({
       ...prevState,
       quizAttempts: [...prevState.quizAttempts, attempt],
     }));
-  };
+  }, []);
 
-  const finishQuiz = () => {
-    // Prevent finishing if already finished to avoid resetting endTime
-    if (state.endTime) return;
-    setState(prevState => ({ ...prevState, endTime: Date.now() }));
-  };
+  const finishQuiz = useCallback(() => {
+    setState(prevState => {
+      if (prevState.endTime) return prevState;
+      return { ...prevState, endTime: Date.now() };
+    });
+  }, []);
   
-  const resetQuiz = () => {
+  const resetQuiz = useCallback(() => {
     setState(prevState => ({
       ...prevState,
       currentSubject: null,
@@ -81,46 +108,36 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       endTime: null,
       quizDuration: null,
     }));
-  };
+  }, []);
   
-  const startNewTest = () => {
+  const startNewTest = useCallback(() => {
     setState(prevState => ({
-        ...prevState,
-        currentSubject: null,
-        currentChapter: null,
-        quizQuestions: [],
-        quizAttempts: [],
-        startTime: null,
-        endTime: null,
-        quizDuration: null,
-        bookmarkedQuestions: [], // Clear bookmarks on a completely new test
+        ...defaultInitialState, // Reset to the absolute default
+        user: prevState.user, // But keep the user logged in
     }));
-  }
+  }, [])
 
-  const startRetake = (): boolean => {
-    const questionsToRetake = state.quizAttempts
-      .filter(attempt => !attempt.isCorrect)
-      .map(attempt => attempt.question);
-    
-    // Only proceed if there are actually incorrect questions to retake.
-    if (questionsToRetake.length > 0) {
-      setState(prevState => ({
-          ...prevState,
-          quizQuestions: questionsToRetake,
-          quizAttempts: [],
-          startTime: Date.now(),
-          endTime: null,
-          quizDuration: questionsToRetake.length * TIME_PER_QUESTION,
-      }));
-      return true; // Signal that the retake quiz was successfully set up.
-    }
-    
-    // If there are no incorrect questions, do nothing and signal failure.
-    console.warn("Attempted to retake a quiz with no incorrect answers.");
-    return false;
-  }
+  const startRetake = useCallback(() => {
+    setState(prevState => {
+      const questionsToRetake = prevState.quizAttempts
+        .filter(attempt => !attempt.isCorrect)
+        .map(attempt => attempt.question);
+      
+      if (questionsToRetake.length > 0) {
+        return {
+            ...prevState,
+            quizQuestions: questionsToRetake,
+            quizAttempts: [],
+            startTime: Date.now(),
+            endTime: null,
+            quizDuration: questionsToRetake.length * TIME_PER_QUESTION,
+        };
+      }
+      return prevState;
+    });
+  }, []);
 
-  const retakeFullQuiz = () => {
+  const retakeFullQuiz = useCallback(() => {
     setState(prevState => ({
       ...prevState,
       quizAttempts: [],
@@ -128,9 +145,9 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       endTime: null,
       quizDuration: prevState.quizQuestions.length * TIME_PER_QUESTION,
     }));
-  };
+  }, []);
 
-  const toggleBookmark = (question: Question) => {
+  const toggleBookmark = useCallback((question: Question) => {
     setState(prevState => {
       const isBookmarked = prevState.bookmarkedQuestions.some(
         q => q.question === question.question
@@ -149,54 +166,56 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
       }
     });
-  };
+  }, []);
 
-  const startBookmarkedQuiz = (): boolean => {
-    if (state.bookmarkedQuestions.length > 0) {
-      const shuffled = [...state.bookmarkedQuestions].sort(() => 0.5 - Math.random());
-      setState(prevState => ({
-        ...prevState,
-        quizQuestions: shuffled,
-        quizAttempts: [],
-        startTime: Date.now(),
-        endTime: null,
-        quizDuration: shuffled.length * TIME_PER_QUESTION,
-      }));
-      return true;
-    }
-    return false;
-  };
-
-  const startWrongAndBookmarkedQuiz = (): boolean => {
-      const incorrectQuestions = state.quizAttempts
-          .filter(attempt => !attempt.isCorrect)
-          .map(attempt => attempt.question);
-      
-      const combined = [...incorrectQuestions, ...state.bookmarkedQuestions];
-      
-      // Remove duplicates by question text
-      const uniqueQuestions = Array.from(new Set(combined.map(q => q.question)))
-          .map(questionText => combined.find(q => q.question === questionText)!);
-      
-      if (uniqueQuestions.length > 0) {
-          const shuffled = uniqueQuestions.sort(() => 0.5 - Math.random());
-          setState(prevState => ({
-              ...prevState,
-              quizQuestions: shuffled,
-              quizAttempts: [],
-              startTime: Date.now(),
-              endTime: null,
-              quizDuration: shuffled.length * TIME_PER_QUESTION,
-          }));
-          return true;
+  const startBookmarkedQuiz = useCallback(() => {
+    setState(prevState => {
+      if (prevState.bookmarkedQuestions.length > 0) {
+        const shuffled = [...prevState.bookmarkedQuestions].sort(() => 0.5 - Math.random());
+        return {
+          ...prevState,
+          quizQuestions: shuffled,
+          quizAttempts: [],
+          startTime: Date.now(),
+          endTime: null,
+          quizDuration: shuffled.length * TIME_PER_QUESTION,
+        };
       }
-      return false;
-  };
+      return prevState;
+    });
+  }, []);
+
+  const startWrongAndBookmarkedQuiz = useCallback(() => {
+      setState(prevState => {
+          const incorrectQuestions = prevState.quizAttempts
+              .filter(attempt => !attempt.isCorrect)
+              .map(attempt => attempt.question);
+          
+          const combined = [...incorrectQuestions, ...prevState.bookmarkedQuestions];
+          
+          const uniqueQuestions = Array.from(new Set(combined.map(q => q.question)))
+              .map(questionText => combined.find(q => q.question === questionText)!);
+          
+          if (uniqueQuestions.length > 0) {
+              const shuffled = uniqueQuestions.sort(() => 0.5 - Math.random());
+              return {
+                  ...prevState,
+                  quizQuestions: shuffled,
+                  quizAttempts: [],
+                  startTime: Date.now(),
+                  endTime: null,
+                  quizDuration: shuffled.length * TIME_PER_QUESTION,
+              };
+          }
+          return prevState;
+      });
+  }, []);
 
   return (
     <QuizContext.Provider value={{
       ...state,
       login,
+      logout,
       selectSubject,
       selectChapter,
       startQuiz,
