@@ -1,15 +1,23 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
+import ContactPopup from './ContactPopup';
+import { MessageSquare } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useContext(QuizContext);
+  const [isContactOpen, setIsContactOpen] = useState(false);
+  const location = useLocation();
+
+  // Show the action buttons if the user is logged in and not on the quiz page.
+  const showActionButtons = user && location.pathname !== '/quiz';
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <header className="bg-gray-800 shadow-md p-4">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-teal-400">MdCAT - ALI GONDAL</h1>
+          <h1 className="text-2xl font-bold text-teal-400">Modern Quiz Platform</h1>
           {user && <span className="text-gray-300">Welcome, {user.username}</span>}
         </div>
       </header>
@@ -17,8 +25,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {children}
       </main>
       <footer className="bg-gray-800 text-center p-4 text-sm text-gray-500">
-        © {new Date().getFullYear()} Ali Gondal. All rights reserved.
+        © {new Date().getFullYear()} testing PRO. All rights reserved.
       </footer>
+
+      {showActionButtons && (
+        <div className="fixed bottom-6 right-6 z-40">
+           <button
+             onClick={() => setIsContactOpen(true)}
+             className="bg-green-600 text-white p-4 rounded-full shadow-lg hover:bg-green-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+             aria-label="Contact Me"
+           >
+             <MessageSquare className="w-6 h-6" />
+           </button>
+        </div>
+      )}
+
+      <ContactPopup isOpen={isContactOpen} onClose={() => setIsContactOpen(false)} />
     </div>
   );
 };
