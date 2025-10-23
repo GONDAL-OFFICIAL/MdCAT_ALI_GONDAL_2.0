@@ -40,6 +40,8 @@ import Electromagnetism from './questions/Physics/Electromagnetism';
 import ElectromagneticInduction from './questions/Physics/ElectromagneticInduction';
 import CircularMotion from './questions/Physics/CircularMotion';
 import Waves from './questions/Physics/Waves';
+import AtomicSpectra from './questions/Physics/AtomicSpectra';
+import NuclearPhysics from './questions/Physics/NuclearPhysics';
 
 export const mcqs: Mcqs = {
   English: {
@@ -111,7 +113,7 @@ export const mcqs: Mcqs = {
     Thermodynamics: [],
     Electrostatics: [],
     "Current Electricity": [],
-    "Atomic Spectra": [],
-    "Nuclear Physics": [],
+    "Atomic Spectra": AtomicSpectra,
+    "Nuclear Physics": NuclearPhysics,
   },
 };

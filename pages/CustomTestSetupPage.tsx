@@ -2,7 +2,8 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
 import { Question } from '../types';
-import { ArrowLeft, Play, ListTodo, Hash } from 'lucide-react';
+import { ArrowLeft, Play, ListTodo, Hash, Clock } from 'lucide-react';
+import { TIME_PER_QUESTION } from '../data/index';
 
 const CustomTestSetupPage: React.FC = () => {
   const { subjects, chapters, mcqs, startQuiz } = useContext(QuizContext);
@@ -26,19 +27,22 @@ const CustomTestSetupPage: React.FC = () => {
   );
     
   const totalAvailableQuestions = allQuestions.length;
-  const maxQuestionsAllowed = Math.min(totalAvailableQuestions, 100);
+  // Removed hardcoded limit of 100
+  const maxQuestionsAllowed = totalAvailableQuestions;
 
   useEffect(() => {
     // Dynamically adjust the number of questions based on user's chapter selection
     if (totalAvailableQuestions > 0) {
       setNumQuestions(currentNum => {
-        const newNum = currentNum === 0 ? 20 : currentNum; // Set a default if starting from 0
-        return Math.min(newNum, totalAvailableQuestions, 100); // Cap at max available or 100
+        const newNum = currentNum === 0 ? Math.min(20, totalAvailableQuestions) : currentNum; // Set a sensible default
+        return Math.min(newNum, totalAvailableQuestions); // Cap at max available
       });
     } else {
       setNumQuestions(0); // Reset to 0 if no chapters are selected
     }
   }, [totalAvailableQuestions]);
+
+  const estimatedTime = Math.ceil((numQuestions * TIME_PER_QUESTION) / 60);
 
   const handleStartCustomTest = () => {
     if (allQuestions.length === 0 || numQuestions === 0) {
@@ -95,38 +99,49 @@ const CustomTestSetupPage: React.FC = () => {
       </div>
 
       <div className="p-6 bg-gray-800 rounded-lg shadow-lg">
-        <h3 className="text-xl font-semibold mb-4 text-teal-300 flex items-center">
-            <Hash className="w-6 h-6 mr-2" /> Number of Questions
-        </h3>
-        <div className="flex items-center space-x-4">
-            <input 
-                type="range" 
-                min={totalAvailableQuestions > 0 ? 10 : 0}
-                max={maxQuestionsAllowed} 
-                value={numQuestions}
-                onChange={e => setNumQuestions(parseInt(e.target.value))}
-                disabled={totalAvailableQuestions === 0}
-                className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
-            />
-            <input 
-                type="number"
-                min="0"
-                max={maxQuestionsAllowed}
-                value={numQuestions}
-                onChange={e => setNumQuestions(parseInt(e.target.value) || 0)}
-                disabled={totalAvailableQuestions === 0}
-                className="w-20 px-2 py-1 text-center text-white bg-gray-700 border border-gray-600 rounded-md"
-            />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            <div>
+                <h3 className="text-xl font-semibold mb-4 text-teal-300 flex items-center">
+                    <Hash className="w-6 h-6 mr-2" /> Number of Questions
+                </h3>
+                <div className="flex items-center space-x-4">
+                    <input 
+                        type="range" 
+                        // Fixed bug where min was 10, making it unusable for small question sets
+                        min={totalAvailableQuestions > 0 ? 1 : 0}
+                        max={maxQuestionsAllowed} 
+                        value={numQuestions}
+                        onChange={e => setNumQuestions(parseInt(e.target.value))}
+                        disabled={totalAvailableQuestions === 0}
+                        className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <input 
+                        type="number"
+                        min="0"
+                        max={maxQuestionsAllowed}
+                        value={numQuestions}
+                        onChange={e => setNumQuestions(parseInt(e.target.value) || 0)}
+                        disabled={totalAvailableQuestions === 0}
+                        className="w-20 px-2 py-1 text-center text-white bg-gray-700 border border-gray-600 rounded-md"
+                    />
+                </div>
+                <p className="text-sm text-gray-400 mt-2">
+                Total available from selection: <span className="font-bold text-white">{totalAvailableQuestions}</span>
+                </p>
+            </div>
+            <div className="bg-gray-700 p-4 rounded-lg text-center">
+                <h3 className="text-xl font-semibold mb-2 text-teal-300 flex items-center justify-center">
+                    <Clock className="w-6 h-6 mr-2" /> Estimated Time
+                </h3>
+                <p className="text-3xl font-bold text-white">~{estimatedTime} <span className="text-lg font-normal">minutes</span></p>
+            </div>
         </div>
-         <p className="text-sm text-gray-400 mt-2">
-          Total available questions from selected chapters: <span className="font-bold text-white">{totalAvailableQuestions}</span>
-        </p>
       </div>
 
        <div className="text-center">
         <button
           onClick={handleStartCustomTest}
-          disabled={totalAvailableQuestions === 0}
+          disabled={totalAvailableQuestions === 0 || numQuestions === 0}
           className="inline-flex items-center px-8 py-3 text-base font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
         >
           <Play className="w-5 h-5 mr-2" />

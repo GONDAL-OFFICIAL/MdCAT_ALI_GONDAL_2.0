@@ -1,7 +1,7 @@
 import React, { createContext, useState, ReactNode } from 'react';
 import { QuizState, QuizContextType, User, Question, QuizAttempt } from '../types';
 // Fix: Explicitly import from '../data/index' to avoid resolving to the empty 'data.ts' file.
-import { users, subjects, chapters } from '../data/index';
+import { users, subjects, chapters, TIME_PER_QUESTION } from '../data/index';
 import { mcqs } from '../data/mcqs';
 
 export const QuizContext = createContext<QuizContextType>({} as QuizContextType);
@@ -17,6 +17,7 @@ const initialState: QuizState = {
   quizAttempts: [],
   startTime: null,
   endTime: null,
+  quizDuration: null,
 };
 
 export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -48,6 +49,7 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       quizAttempts: [],
       startTime: Date.now(),
       endTime: null,
+      quizDuration: questions.length * TIME_PER_QUESTION,
     }));
   };
   
@@ -61,6 +63,8 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const finishQuiz = () => {
+    // Prevent finishing if already finished to avoid resetting endTime
+    if (state.endTime) return;
     setState(prevState => ({ ...prevState, endTime: Date.now() }));
   };
   
@@ -73,6 +77,7 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       quizAttempts: [],
       startTime: null,
       endTime: null,
+      quizDuration: null,
     }));
   };
   
@@ -85,30 +90,40 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         quizAttempts: [],
         startTime: null,
         endTime: null,
+        quizDuration: null,
     }));
   }
 
-  const startRetake = () => {
+  const startRetake = (): boolean => {
     const questionsToRetake = state.quizAttempts
       .filter(attempt => !attempt.isCorrect)
       .map(attempt => attempt.question);
     
-    setState(prevState => ({
-        ...prevState,
-        quizQuestions: questionsToRetake.length > 0 ? questionsToRetake : state.quizQuestions,
-        quizAttempts: [],
-        startTime: Date.now(),
-        endTime: null,
-    }));
+    // Only proceed if there are actually incorrect questions to retake.
+    if (questionsToRetake.length > 0) {
+      setState(prevState => ({
+          ...prevState,
+          quizQuestions: questionsToRetake,
+          quizAttempts: [],
+          startTime: Date.now(),
+          endTime: null,
+          quizDuration: questionsToRetake.length * TIME_PER_QUESTION,
+      }));
+      return true; // Signal that the retake quiz was successfully set up.
+    }
+    
+    // If there are no incorrect questions, do nothing and signal failure.
+    console.warn("Attempted to retake a quiz with no incorrect answers.");
+    return false;
   }
 
   const retakeFullQuiz = () => {
     setState(prevState => ({
       ...prevState,
-      // quizQuestions are already set from the previous quiz
       quizAttempts: [],
       startTime: Date.now(),
       endTime: null,
+      quizDuration: prevState.quizQuestions.length * TIME_PER_QUESTION,
     }));
   };
 

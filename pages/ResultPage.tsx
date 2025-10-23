@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
 import { CheckCircle, XCircle, Clock, Percent, Hash, Repeat, FileText, Home } from 'lucide-react';
@@ -7,9 +7,19 @@ const ResultPage: React.FC = () => {
   const { quizAttempts, startTime, endTime, startNewTest, startRetake, retakeFullQuiz } = useContext(QuizContext);
   const navigate = useNavigate();
 
+  // This effect validates that the page was accessed legitimately on its initial load.
+  // It runs only once and redirects if no completed quiz data is found.
+  useEffect(() => {
+    if (quizAttempts.length === 0 || !startTime || !endTime) {
+      navigate('/subjects');
+    }
+  }, []); // The empty dependency array ensures this runs only on mount.
+
+  // This prevents rendering errors if the initial state is invalid,
+  // and also gracefully handles the momentary invalid state when a retake is initiated,
+  // preventing the page from crashing before navigation to '/quiz' occurs.
   if (quizAttempts.length === 0 || !startTime || !endTime) {
-    navigate('/subjects');
-    return null;
+    return null; // Render nothing while redirecting or before re-rendering for a new quiz.
   }
 
   const correctAnswers = quizAttempts.filter(attempt => attempt.isCorrect).length;
@@ -65,7 +75,11 @@ const ResultPage: React.FC = () => {
           New Test
         </button>
         <button
-          onClick={() => { startRetake(); navigate('/quiz')}}
+          onClick={() => { 
+            if (startRetake()) {
+              navigate('/quiz');
+            }
+          }}
           disabled={!incorrectQuestions}
           className="flex items-center px-6 py-3 text-base font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
         >

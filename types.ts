@@ -37,6 +37,7 @@ export interface QuizState {
   quizAttempts: QuizAttempt[];
   startTime: number | null;
   endTime: number | null;
+  quizDuration: number | null;
 }
 
 export interface QuizContextType extends QuizState {
@@ -48,6 +49,6 @@ export interface QuizContextType extends QuizState {
   finishQuiz: () => void;
   resetQuiz: () => void;
   startNewTest: () => void;
-  startRetake: () => void;
+  startRetake: () => boolean;
   retakeFullQuiz: () => void;
 }

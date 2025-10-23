@@ -1,8 +1,7 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
-import { Play, ArrowLeft } from 'lucide-react';
-// FIX: Corrected import path to point to the data module in the 'data' directory.
+import { Play, ArrowLeft, Hash } from 'lucide-react';
 import { TIME_PER_QUESTION } from '../data/index';
 
 const QuizSetupPage: React.FC = () => {
@@ -10,16 +9,26 @@ const QuizSetupPage: React.FC = () => {
   const { mcqs, startQuiz } = useContext(QuizContext);
   const navigate = useNavigate();
 
+  const questions = (subject && chapter && mcqs[subject]?.[chapter]) || [];
+  const totalAvailableQuestions = questions.length;
+  
+  const [numQuestions, setNumQuestions] = useState(totalAvailableQuestions);
+
+  useEffect(() => {
+    // Set the initial number of questions to all available when the component loads or chapter changes.
+    setNumQuestions(totalAvailableQuestions);
+  }, [totalAvailableQuestions]);
+  
   if (!subject || !chapter) {
     return <p>Error: Subject or chapter not specified.</p>;
   }
 
-  const questions = mcqs[subject]?.[chapter] || [];
-  const questionCount = questions.length;
-  const estimatedTime = Math.ceil((questionCount * TIME_PER_QUESTION) / 60);
+  const estimatedTime = numQuestions; // 1 min per question
 
   const handleStartQuiz = () => {
-    startQuiz(questions);
+    const shuffled = [...questions].sort(() => 0.5 - Math.random());
+    const selectedQuestions = shuffled.slice(0, numQuestions);
+    startQuiz(selectedQuestions);
     navigate('/quiz');
   };
   
@@ -35,9 +44,37 @@ const QuizSetupPage: React.FC = () => {
                     <span className="font-semibold text-teal-300">Chapter:</span> {chapter}
                 </p>
                 <hr className="border-gray-600" />
-                <p className="text-lg text-gray-300">
-                    Number of Questions: <span className="font-bold text-white">{questionCount}</span>
-                </p>
+                
+                {/* Number of Questions Selector */}
+                <div className="pt-4">
+                  <h3 className="text-lg font-semibold mb-4 text-teal-300 flex items-center justify-center">
+                      <Hash className="w-5 h-5 mr-2" /> Number of Questions
+                  </h3>
+                  <div className="flex items-center space-x-4">
+                      <input 
+                          type="range" 
+                          min={totalAvailableQuestions > 0 ? 1 : 0}
+                          max={totalAvailableQuestions} 
+                          value={numQuestions}
+                          onChange={e => setNumQuestions(parseInt(e.target.value))}
+                          disabled={totalAvailableQuestions === 0}
+                          className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <input 
+                          type="number"
+                          min="0"
+                          max={totalAvailableQuestions}
+                          value={numQuestions}
+                          onChange={e => setNumQuestions(parseInt(e.target.value) || 0)}
+                          disabled={totalAvailableQuestions === 0}
+                          className="w-20 px-2 py-1 text-center text-white bg-gray-900 border border-gray-600 rounded-md"
+                      />
+                  </div>
+                  <p className="text-sm text-gray-400 mt-2">
+                    Total available: <span className="font-bold text-white">{totalAvailableQuestions}</span>
+                  </p>
+                </div>
+
                 <p className="text-lg text-gray-300">
                     Estimated Time: <span className="font-bold text-white">~{estimatedTime} minutes</span>
                 </p>
@@ -52,7 +89,7 @@ const QuizSetupPage: React.FC = () => {
                 </button>
                 <button
                     onClick={handleStartQuiz}
-                    disabled={questionCount === 0}
+                    disabled={numQuestions === 0}
                     className="flex items-center px-8 py-3 text-base font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
                     >
                     <Play className="w-5 h-5 mr-2" />
