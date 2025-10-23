@@ -42,6 +42,16 @@ import CircularMotion from './questions/Physics/CircularMotion';
 import Waves from './questions/Physics/Waves';
 import AtomicSpectra from './questions/Physics/AtomicSpectra';
 import NuclearPhysics from './questions/Physics/NuclearPhysics';
+import Thermodynamics from './questions/Physics/Thermodynamics';
+import Electrostatics from './questions/Physics/Electrostatics';
+import CurrentElectricity from './questions/Physics/CurrentElectricity';
+
+// PAST PAPER
+// import Mdcat2024 from './questions/PastPaper/Mdcat2024';
+// import Mdcat2023 from './questions/PastPaper/Mdcat2023';
+// import Mdcat2022 from './questions/PastPaper/Mdcat2022';
+// import Mdcat2021 from './questions/PastPaper/Mdcat2021';
+// import Mdcat2020 from './questions/PastPaper/Mdcat2020';
 
 export const mcqs: Mcqs = {
   English: {
@@ -110,10 +120,17 @@ export const mcqs: Mcqs = {
      // Note: Other physics chapters are not included as they were not in the provided data.
     "Force and Motion": [],
     "Work and Energy": [],
-    Thermodynamics: [],
-    Electrostatics: [],
-    "Current Electricity": [],
+    Thermodynamics,
+    Electrostatics,
+    "Current Electricity": CurrentElectricity,
     "Atomic Spectra": AtomicSpectra,
     "Nuclear Physics": NuclearPhysics,
+  },
+  "PAST PAPER": {
+    // "2024 MDCAT": Mdcat2024,
+    // "2023 MDCAT": Mdcat2023,
+    // "2022 MDCAT": Mdcat2022,
+    // "2021 MDCAT": Mdcat2021,
+    // "2020 MDCAT": Mdcat2020,
   },
 };

@@ -17,6 +17,7 @@ export const subjects: string[] = [
   "Biology",
   "Logic & Reasoning",
   "Physics",
+  "PAST PAPER",
 ];
 
 // 📗 Add or edit chapters for each subject below:
@@ -80,6 +81,13 @@ export const chapters: Chapters = {
     "Dawn of Modern Physics",
     "Atomic Spectra",
     "Nuclear Physics",
+  ],
+  "PAST PAPER": [
+    "2024 MDCAT",
+    "2023 MDCAT",
+    "2022 MDCAT",
+    "2021 MDCAT",
+    "2020 MDCAT",
   ],
 };
 
