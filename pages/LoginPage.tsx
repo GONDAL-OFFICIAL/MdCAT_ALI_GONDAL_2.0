@@ -24,7 +24,7 @@ const LoginPage: React.FC = () => {
     <div className="flex items-center justify-center min-h-[calc(100vh-140px)]">
       <div className="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-lg shadow-lg">
         <h2 className="text-3xl font-bold text-center text-teal-400">Welcome Back!</h2>
-        <p className="text-center text-gray-400">Enter your credentials to start the quiz.</p>
+        <p className="text-center text-gray-400">Enter your credentials.</p>
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="username" className="text-sm font-medium text-gray-300 sr-only">
