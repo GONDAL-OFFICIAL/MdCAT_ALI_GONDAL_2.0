@@ -25,13 +25,13 @@ A modern **React + Vite + Tailwind CSS** based quiz platform for MDCAT preparati
 **Steps:**
 
 ```bash
-# 1️⃣ Clone the repository
+# 1️⃣ Clone the repository!
 git clone https://github.com/GONDAL-OFFICIAL/MdCAT_ALI_GONDAL_2.0.git
 cd MdCAT_ALI_GONDAL_2.0
 
-# 2️⃣ Install dependencies
+# 2️⃣ Install dependencies!
 npm install
 
-# 3️⃣ Start the development server
+# 3️⃣ Start the development server!
 npm run dev
 ```
