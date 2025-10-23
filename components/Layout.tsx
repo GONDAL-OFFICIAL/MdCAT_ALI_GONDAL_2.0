@@ -9,7 +9,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <header className="bg-gray-800 shadow-md p-4">
         <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-teal-400">Modern Quiz Platform</h1>
+          <h1 className="text-2xl font-bold text-teal-400">MdCAT - ALI GONDAL</h1>
           {user && <span className="text-gray-300">Welcome, {user.username}</span>}
         </div>
       </header>
@@ -17,7 +17,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {children}
       </main>
       <footer className="bg-gray-800 text-center p-4 text-sm text-gray-500">
-        © {new Date().getFullYear()} testing PRO. All rights reserved.
+        © {new Date().getFullYear()} Ali Gondal. All rights reserved.
       </footer>
     </div>
   );
