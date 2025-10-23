@@ -1,9 +1,9 @@
 
 import React, { useContext, useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
 import ContactPopup from './ContactPopup';
-import { MessageSquare, UserPlus, Trophy } from 'lucide-react';
+import { MessageSquare, UserPlus } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useContext(QuizContext);
@@ -21,9 +21,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {user && (
             <div className="flex items-center space-x-4">
               <span className="text-gray-300">Welcome, {user.username}</span>
-              <Link to="/leaderboard" className="text-gray-400 hover:text-white transition-colors" aria-label="View Leaderboard">
-                <Trophy className="w-6 h-6" />
-              </Link>
             </div>
           )}
         </div>

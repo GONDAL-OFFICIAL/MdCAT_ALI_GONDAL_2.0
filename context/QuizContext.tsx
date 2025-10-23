@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, ReactNode } from 'react';
 import { QuizState, QuizContextType, User, Question, QuizAttempt } from '../types';
 // Fix: Explicitly import from '../data/index' to avoid resolving to the empty 'data.ts' file.
@@ -18,6 +19,7 @@ const initialState: QuizState = {
   startTime: null,
   endTime: null,
   quizDuration: null,
+  bookmarkedQuestions: [],
 };
 
 export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -91,6 +93,7 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         startTime: null,
         endTime: null,
         quizDuration: null,
+        bookmarkedQuestions: [], // Clear bookmarks on a completely new test
     }));
   }
 
@@ -127,6 +130,69 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }));
   };
 
+  const toggleBookmark = (question: Question) => {
+    setState(prevState => {
+      const isBookmarked = prevState.bookmarkedQuestions.some(
+        q => q.question === question.question
+      );
+      if (isBookmarked) {
+        return {
+          ...prevState,
+          bookmarkedQuestions: prevState.bookmarkedQuestions.filter(
+            q => q.question !== question.question
+          ),
+        };
+      } else {
+        return {
+          ...prevState,
+          bookmarkedQuestions: [...prevState.bookmarkedQuestions, question],
+        };
+      }
+    });
+  };
+
+  const startBookmarkedQuiz = (): boolean => {
+    if (state.bookmarkedQuestions.length > 0) {
+      const shuffled = [...state.bookmarkedQuestions].sort(() => 0.5 - Math.random());
+      setState(prevState => ({
+        ...prevState,
+        quizQuestions: shuffled,
+        quizAttempts: [],
+        startTime: Date.now(),
+        endTime: null,
+        quizDuration: shuffled.length * TIME_PER_QUESTION,
+      }));
+      return true;
+    }
+    return false;
+  };
+
+  const startWrongAndBookmarkedQuiz = (): boolean => {
+      const incorrectQuestions = state.quizAttempts
+          .filter(attempt => !attempt.isCorrect)
+          .map(attempt => attempt.question);
+      
+      const combined = [...incorrectQuestions, ...state.bookmarkedQuestions];
+      
+      // Remove duplicates by question text
+      const uniqueQuestions = Array.from(new Set(combined.map(q => q.question)))
+          .map(questionText => combined.find(q => q.question === questionText)!);
+      
+      if (uniqueQuestions.length > 0) {
+          const shuffled = uniqueQuestions.sort(() => 0.5 - Math.random());
+          setState(prevState => ({
+              ...prevState,
+              quizQuestions: shuffled,
+              quizAttempts: [],
+              startTime: Date.now(),
+              endTime: null,
+              quizDuration: shuffled.length * TIME_PER_QUESTION,
+          }));
+          return true;
+      }
+      return false;
+  };
+
   return (
     <QuizContext.Provider value={{
       ...state,
@@ -140,6 +206,9 @@ export const QuizProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       startNewTest,
       startRetake,
       retakeFullQuiz,
+      toggleBookmark,
+      startBookmarkedQuiz,
+      startWrongAndBookmarkedQuiz,
     }}>
       {children}
     </QuizContext.Provider>

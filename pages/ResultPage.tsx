@@ -1,10 +1,11 @@
+
 import React, { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
-import { CheckCircle, XCircle, Clock, Percent, Hash, Repeat, FileText, Home } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Percent, Hash, Repeat, FileText, Home, Bookmark, Star } from 'lucide-react';
 
 const ResultPage: React.FC = () => {
-  const { quizAttempts, startTime, endTime, startNewTest, startRetake, retakeFullQuiz } = useContext(QuizContext);
+  const { quizAttempts, startTime, endTime, startNewTest, startRetake, retakeFullQuiz, bookmarkedQuestions, startBookmarkedQuiz, startWrongAndBookmarkedQuiz } = useContext(QuizContext);
   const navigate = useNavigate();
 
   // This effect validates that the page was accessed legitimately on its initial load.
@@ -27,7 +28,12 @@ const ResultPage: React.FC = () => {
   const scorePercentage = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
   const timeTaken = Math.round((endTime - startTime) / 1000); // in seconds
   
-  const incorrectQuestions = quizAttempts.filter(attempt => !attempt.isCorrect).length > 0;
+  const incorrectQuestionsCount = quizAttempts.filter(attempt => !attempt.isCorrect).length;
+  const bookmarkedCount = bookmarkedQuestions.length;
+  const combinedUniqueCount = new Set([
+    ...quizAttempts.filter(a => !a.isCorrect).map(a => a.question.question),
+    ...bookmarkedQuestions.map(q => q.question)
+  ]).size;
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8 animate-fadeIn space-y-8">
@@ -69,26 +75,38 @@ const ResultPage: React.FC = () => {
        <div className="flex flex-wrap justify-center gap-4 py-6">
         <button
           onClick={() => { startNewTest(); navigate('/subjects'); }}
-          className="flex items-center px-6 py-3 text-base font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-all transform hover:scale-105"
+          className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-all transform hover:scale-105"
         >
           <Home className="w-5 h-5 mr-2" />
           New Test
         </button>
         <button
-          onClick={() => { 
-            if (startRetake()) {
-              navigate('/quiz');
-            }
-          }}
-          disabled={!incorrectQuestions}
-          className="flex items-center px-6 py-3 text-base font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+          onClick={() => { if (startRetake()) navigate('/quiz'); }}
+          disabled={incorrectQuestionsCount === 0}
+          className="flex items-center px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-md hover:bg-yellow-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
         >
           <Repeat className="w-5 h-5 mr-2" />
-          Retake Incorrect
+          Retake Incorrect ({incorrectQuestionsCount})
         </button>
-         <button
+        <button
+          onClick={() => { if (startBookmarkedQuiz()) navigate('/quiz'); }}
+          disabled={bookmarkedCount === 0}
+          className="flex items-center px-4 py-2 text-sm font-medium text-white bg-pink-600 rounded-md hover:bg-pink-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+        >
+          <Bookmark className="w-5 h-5 mr-2" />
+          Test Bookmarked ({bookmarkedCount})
+        </button>
+        <button
+          onClick={() => { if (startWrongAndBookmarkedQuiz()) navigate('/quiz'); }}
+          disabled={combinedUniqueCount === 0}
+          className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+        >
+          <Star className="w-5 h-5 mr-2" />
+          Test Wrong & Bookmarked ({combinedUniqueCount})
+        </button>
+        <button
           onClick={() => { retakeFullQuiz(); navigate('/quiz'); }}
-          className="flex items-center px-6 py-3 text-base font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 transition-all transform hover:scale-105"
+          className="flex items-center px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 transition-all transform hover:scale-105"
         >
           <FileText className="w-5 h-5 mr-2" />
           Retake Full Test

@@ -38,6 +38,7 @@ export interface QuizState {
   startTime: number | null;
   endTime: number | null;
   quizDuration: number | null;
+  bookmarkedQuestions: Question[];
 }
 
 export interface QuizContextType extends QuizState {
@@ -51,4 +52,7 @@ export interface QuizContextType extends QuizState {
   startNewTest: () => void;
   startRetake: () => boolean;
   retakeFullQuiz: () => void;
+  toggleBookmark: (question: Question) => void;
+  startBookmarkedQuiz: () => boolean;
+  startWrongAndBookmarkedQuiz: () => boolean;
 }
