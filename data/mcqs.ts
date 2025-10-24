@@ -47,11 +47,11 @@ import Electrostatics from './questions/Physics/Electrostatics';
 import CurrentElectricity from './questions/Physics/CurrentElectricity';
 
 // PAST PAPER
-// import Mdcat2024 from './questions/PastPaper/Mdcat2024';
-// import Mdcat2023 from './questions/PastPaper/Mdcat2023';
-// import Mdcat2022 from './questions/PastPaper/Mdcat2022';
-// import Mdcat2021 from './questions/PastPaper/Mdcat2021';
-// import Mdcat2020 from './questions/PastPaper/Mdcat2020';
+import Mdcat2024 from './questions/PastPapers/Mdcat2024';
+import Mdcat2023 from './questions/PastPapers/Mdcat2023';
+import Mdcat2022 from './questions/PastPapers/Mdcat2022';
+import Mdcat2021 from './questions/PastPapers/Mdcat2021';
+import Mdcat2020 from './questions/PastPapers/Mdcat2020';
 
 export const mcqs: Mcqs = {
   English: {
@@ -127,10 +127,10 @@ export const mcqs: Mcqs = {
     "Nuclear Physics": NuclearPhysics,
   },
   "PAST PAPER": {
-    // "2024 MDCAT": Mdcat2024,
-    // "2023 MDCAT": Mdcat2023,
-    // "2022 MDCAT": Mdcat2022,
-    // "2021 MDCAT": Mdcat2021,
-    // "2020 MDCAT": Mdcat2020,
+    "2024 MDCAT": Mdcat2024,
+    "2023 MDCAT": Mdcat2023,
+    "2022 MDCAT": Mdcat2022,
+    "2021 MDCAT": Mdcat2021,
+    "2020 MDCAT": Mdcat2020,
   },
 };
