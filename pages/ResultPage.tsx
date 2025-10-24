@@ -3,15 +3,24 @@ import { useNavigate } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
 import { CheckCircle, XCircle, Clock, Percent, Hash, Repeat, FileText, Home, Bookmark, Star, ArrowLeft } from 'lucide-react';
 
+// --- NEW CODE: Import Firebase services ---
+import { auth, db } from '../firebaseConfig'; // Import auth and db
+import { doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { useAuthState } from 'react-firebase-hooks/auth';
+
 const ResultPage: React.FC = () => {
   const { quizAttempts, startTime, endTime, startNewTest, startRetake, retakeFullQuiz, bookmarkedQuestions, startBookmarkedQuiz, startWrongAndBookmarkedQuiz, currentSubject } = useContext(QuizContext);
   const navigate = useNavigate();
+
+  // --- NEW CODE: Get the currently logged-in user ---
+  const [user, loading] = useAuthState(auth);
 
   useEffect(() => {
     if (quizAttempts.length === 0 || !startTime || !endTime) {
       navigate('/subjects');
     }
-  }, []); 
+    // --- MODIFIED CODE: Added all dependencies ---
+  }, [quizAttempts, startTime, endTime, navigate]); 
 
   if (quizAttempts.length === 0 || !startTime || !endTime) {
     return null;
@@ -28,6 +37,65 @@ const ResultPage: React.FC = () => {
     ...quizAttempts.filter(a => !a.isCorrect).map(a => a.question.question),
     ...bookmarkedQuestions.map(q => q.question)
   ]).size;
+
+  // --- NEW CODE: useEffect to Save Results to Firebase ---
+  useEffect(() => {
+    // Only run if:
+    // 1. We are not loading the user's auth state
+    // 2. A user is logged in (user object exists)
+    // 3. There are valid results to save (totalQuestions > 0)
+    if (!loading && user && totalQuestions > 0 && startTime && endTime) {
+      
+      const saveResults = async () => {
+        // Get a reference to THIS user's document in the 'userStats' collection
+        // The document ID is their unique user.uid
+        const userStatRef = doc(db, 'userStats', user.uid);
+
+        try {
+          // A transaction is the safest way to update data
+          // It reads the data and writes the new data in one "atomic" operation
+          await runTransaction(db, async (transaction) => {
+            const userDoc = await transaction.get(userStatRef);
+
+            if (!userDoc.exists()) {
+              // This should not happen if they signed up correctly.
+              // This is a safety check.
+              console.error("User doc doesn't exist! Cannot save score.");
+              return;
+            }
+
+            // --- User exists, update their stats ---
+            const oldStats = userDoc.data();
+            
+            const newTotalCorrect = oldStats.totalCorrect + correctAnswers;
+            const newTotalAttempted = oldStats.totalAttempted + totalQuestions;
+            
+            // Calculate new percentage, avoid division by zero
+            const newPercentage = newTotalAttempted > 0 
+              ? (newTotalCorrect / newTotalAttempted) * 100 
+              : 0;
+
+            transaction.update(userStatRef, {
+              totalCorrect: newTotalCorrect,
+              totalAttempted: newTotalAttempted,
+              overallPercentage: newPercentage,
+              lastTestTaken: serverTimestamp() // Update their "last active" time
+            });
+          });
+
+          console.log("User stats updated successfully!");
+
+        } catch (e) {
+          console.error("Transaction to save score failed: ", e);
+        }
+      };
+
+      saveResults();
+    }
+    
+    // This effect runs only when these values are finalized
+  }, [user, loading, correctAnswers, totalQuestions, startTime, endTime]);
+  // --- END OF NEW CODE ---
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8 animate-fadeIn space-y-8">
@@ -137,7 +205,7 @@ const ResultPage: React.FC = () => {
                     const isUserChoice = option === attempt.userAnswer;
                     let optionClass = "border-gray-600";
                     if (isCorrect) optionClass = "bg-green-800/50 border-green-500";
-                    if (isUserChoice && !isCorrect) optionClass = "bg-red-800/50 border-red-500";
+                    if (isUserChoice && !isCorrect) optionClass = "bg-red-800/5G-P6S14Y3KRC0 border-red-500";
                     
                     return (
                          <div key={option} className={`p-3 border rounded-md ${optionClass} flex items-center`}>

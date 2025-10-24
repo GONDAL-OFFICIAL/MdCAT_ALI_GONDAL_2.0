@@ -1,12 +1,17 @@
-
-import React, { useContext, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { QuizContext } from '../context/QuizContext';
+import React, { useState } from 'react';
+import { useLocation, useNavigate, Link } from 'react-router-dom'; // 1. Import Link
 import ContactPopup from './ContactPopup';
-import { MessageSquare, UserPlus, LogOut } from 'lucide-react';
+import { MessageSquare, UserPlus, LogOut, Trophy } from 'lucide-react'; // 2. Import Trophy
+
+// 3. Import Firebase Auth
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../firebaseConfig'; // Adjust path if needed (e.g., ../firebaseConfig)
+import { signOut } from 'firebase/auth';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, logout } = useContext(QuizContext);
+  // 4. Use Firebase Auth hook instead of QuizContext
+  const [user, loading] = useAuthState(auth); 
+  
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -14,8 +19,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isQuizPage = location.pathname === '/quiz';
   const showActionButton = !isQuizPage;
 
-  const handleLogout = () => {
-    logout();
+  // 5. Create a new logout function that uses Firebase
+  const handleLogout = async () => {
+    await signOut(auth);
     navigate('/');
   };
 
@@ -24,16 +30,32 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       <header className="bg-gray-800 shadow-md p-4">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-teal-400">MdCAT "ALI GONDAL"</h1>
-          {user && (
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-300">Welcome, {user.username}</span>
+          
+          {/* 6. Wait for loading to finish, then check for user */}
+          {!loading && user && (
+            <div className="flex items-center space-x-2 md:space-x-4">
+              
+              {/* Note: Firebase user object uses 'email' or 'displayName', not 'username' */}
+              <span className="text-gray-300 hidden md:block">Welcome, {user.displayName || user.email}</span>
+              
+              {/* --- 7. HERE IS YOUR NEW LEADERBOARD BUTTON --- */}
+              <Link
+                to="/leaderboard"
+                className="flex items-center px-3 py-1.5 text-sm font-medium text-teal-400 bg-gray-700 rounded-md hover:bg-teal-900/50 hover:text-teal-300 transition-colors"
+                aria-label="Leaderboard"
+              >
+                <Trophy className="w-4 h-4 mr-0 md:mr-2" />
+                <span className="hidden md:block">Leaderboard</span>
+              </Link>
+              
+              {/* This Logout button will now work correctly */}
               <button
                 onClick={handleLogout}
                 className="flex items-center px-3 py-1.5 text-sm font-medium text-red-400 bg-gray-700 rounded-md hover:bg-red-900/50 hover:text-red-300 transition-colors"
                 aria-label="Logout"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                <LogOut className="w-4 h-4 mr-0 md:mr-2" />
+                <span className="hidden md:block">Logout</span>
               </button>
             </div>
           )}
@@ -46,6 +68,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         © {new Date().getFullYear()} Ali Gondal. All rights reserved.
       </footer>
 
+      {/* This floating button will also work correctly now */}
       {showActionButton && (
         <div className="fixed bottom-6 right-6 z-40">
            <button
