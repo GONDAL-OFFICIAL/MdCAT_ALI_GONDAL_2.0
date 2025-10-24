@@ -10,6 +10,8 @@ import FundamentalConcepts from './questions/Chemistry/FundamentalConcepts';
 import AtomicStructure from './questions/Chemistry/AtomicStructure';
 import Equilibrium from './questions/Chemistry/Equilibrium';
 import ReactionKinetics from './questions/Chemistry/ReactionKinetics';
+import Thermochemistry from './questions/Chemistry/Thermochemistry';
+import Electrochemistry from './questions/Chemistry/Electrochemistry';
 
 // Biology
 import Cell from './questions/Biology/Cell';
@@ -69,8 +71,8 @@ export const mcqs: Mcqs = {
     Gases: [],
     Solid: [],
     Liquid: [],
-    Thermochemistry: [],
-    Electrochemistry: [],
+    Thermochemistry,
+    Electrochemistry,
     "Chemical Bonding": [],
     Macromolecules: [],
     "s-Block & p-Block Elements": [],
