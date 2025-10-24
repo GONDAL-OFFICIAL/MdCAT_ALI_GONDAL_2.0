@@ -47,6 +47,7 @@ import NuclearPhysics from './questions/Physics/NuclearPhysics';
 import Thermodynamics from './questions/Physics/Thermodynamics';
 import Electrostatics from './questions/Physics/Electrostatics';
 import CurrentElectricity from './questions/Physics/CurrentElectricity';
+import WorkAndEnergy from './questions/Physics/WorkAndEnergy';
 
 // PAST PAPER
 import Mdcat2024 from './questions/PastPapers/Mdcat2024';
@@ -121,7 +122,7 @@ export const mcqs: Mcqs = {
     Waves,
      // Note: Other physics chapters are not included as they were not in the provided data.
     "Force and Motion": [],
-    "Work and Energy": [],
+    "Work and Energy": WorkAndEnergy,
     Thermodynamics,
     Electrostatics,
     "Current Electricity": CurrentElectricity,
