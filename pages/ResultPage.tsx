@@ -1,32 +1,26 @@
-
 import React, { useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QuizContext } from '../context/QuizContext';
-import { CheckCircle, XCircle, Clock, Percent, Hash, Repeat, FileText, Home, Bookmark, Star } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Percent, Hash, Repeat, FileText, Home, Bookmark, Star, ArrowLeft } from 'lucide-react';
 
 const ResultPage: React.FC = () => {
-  const { quizAttempts, startTime, endTime, startNewTest, startRetake, retakeFullQuiz, bookmarkedQuestions, startBookmarkedQuiz, startWrongAndBookmarkedQuiz } = useContext(QuizContext);
+  const { quizAttempts, startTime, endTime, startNewTest, startRetake, retakeFullQuiz, bookmarkedQuestions, startBookmarkedQuiz, startWrongAndBookmarkedQuiz, currentSubject } = useContext(QuizContext);
   const navigate = useNavigate();
 
-  // This effect validates that the page was accessed legitimately on its initial load.
-  // It runs only once and redirects if no completed quiz data is found.
   useEffect(() => {
     if (quizAttempts.length === 0 || !startTime || !endTime) {
       navigate('/subjects');
     }
-  }, []); // The empty dependency array ensures this runs only on mount.
+  }, []); 
 
-  // This prevents rendering errors if the initial state is invalid,
-  // and also gracefully handles the momentary invalid state when a retake is initiated,
-  // preventing the page from crashing before navigation to '/quiz' occurs.
   if (quizAttempts.length === 0 || !startTime || !endTime) {
-    return null; // Render nothing while redirecting or before re-rendering for a new quiz.
+    return null;
   }
 
   const correctAnswers = quizAttempts.filter(attempt => attempt.isCorrect).length;
   const totalQuestions = quizAttempts.length;
   const scorePercentage = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
-  const timeTaken = Math.round((endTime - startTime) / 1000); // in seconds
+  const timeTaken = Math.round((endTime - startTime) / 1000);
   
   const incorrectQuestionsCount = quizAttempts.filter(attempt => !attempt.isCorrect).length;
   const bookmarkedCount = bookmarkedQuestions.length;
@@ -37,7 +31,16 @@ const ResultPage: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8 animate-fadeIn space-y-8">
-      <h2 className="text-4xl font-bold text-center text-teal-400">Quiz Results</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-4xl font-bold text-teal-400">Quiz Results</h2>
+        <button
+          onClick={() => navigate('/subjects')}
+          className="flex items-center px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 rounded-md hover:bg-gray-600 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Subjects
+        </button>
+      </div>
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-white">
@@ -78,7 +81,15 @@ const ResultPage: React.FC = () => {
           className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-all transform hover:scale-105"
         >
           <Home className="w-5 h-5 mr-2" />
-          New Test
+          New Subject
+        </button>
+        <button
+          onClick={() => { if (currentSubject) navigate(`/chapters/${currentSubject}`); }}
+          disabled={!currentSubject}
+          className="flex items-center px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-all transform hover:scale-105"
+        >
+          <ArrowLeft className="w-5 h-5 mr-2" />
+          Back to Chapters
         </button>
         <button
           onClick={() => { startRetake(); navigate('/quiz'); }}
