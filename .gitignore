@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Ignore Firebase config
+firebaseConfig.ts
+src/firebaseConfig.ts
